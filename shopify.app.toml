@@ -1,12 +1,10 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
-#
-# Replace client_id and the URLs below with your new Shopify app's values.
-# After deploying to Coolify, set application_url / redirect / webhook URLs to your
-# Coolify domain, or run `shopify app config link` to sync from the Partner Dashboard.
+# URLs point at the Coolify deployment. Run `shopify app deploy` to publish the
+# extension and sync this config to the Partner Dashboard.
 
 client_id = "958a613936c6a38625a1451c1cace214"
 name = "HideStock"
-application_url = "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN"
+application_url = "https://j9bdla095i7jyhc9f33kaxbv.91.239.208.85.sslip.io"
 embedded = true
 
 [build]
@@ -16,13 +14,13 @@ automatically_update_urls_on_dev = true
 api_version = "2026-04"
 
 [webhooks.privacy_compliance]
-customer_deletion_url = "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN/webhooks"
-customer_data_request_url = "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN/webhooks"
-shop_deletion_url = "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN/webhooks"
+customer_deletion_url = "https://j9bdla095i7jyhc9f33kaxbv.91.239.208.85.sslip.io/webhooks"
+customer_data_request_url = "https://j9bdla095i7jyhc9f33kaxbv.91.239.208.85.sslip.io/webhooks"
+shop_deletion_url = "https://j9bdla095i7jyhc9f33kaxbv.91.239.208.85.sslip.io/webhooks"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_products,read_inventory,read_themes"
 
 [auth]
-redirect_urls = [ "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN/auth/callback" ]
+redirect_urls = [ "https://j9bdla095i7jyhc9f33kaxbv.91.239.208.85.sslip.io/auth/callback" ]
