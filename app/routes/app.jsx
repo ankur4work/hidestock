@@ -31,7 +31,9 @@ export const action = async ({ request }) => {
   const formData = await request.formData();
 
   if (formData.get("action") === "subscribe") {
-    await billing.request({ plan: PLAN_NAME, isTest: false });
+    // Set APP_BILLING_TEST=true to create test charges (no real money) on dev/staging.
+    const isTest = process.env.APP_BILLING_TEST === "true";
+    await billing.request({ plan: PLAN_NAME, isTest });
   }
 
   return null;
