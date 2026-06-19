@@ -51,7 +51,9 @@ export const action = async ({ request }) => {
   const { billing } = await authenticate.admin(request);
   const formData = await request.formData();
 
-  if (formData.get("action") === "subscribe") {
+  // Only the in-app Billing API path requests a charge. When billing is disabled
+  // (Shopify Managed Pricing collects payment), never call billing.request — it would 403.
+  if (BILLING_ENABLED && formData.get("action") === "subscribe") {
     // Set APP_BILLING_TEST=true to create test charges (no real money) on dev/staging.
     const isTest = process.env.APP_BILLING_TEST === "true";
     await billing.request({ plan: PLAN_NAME, isTest });
