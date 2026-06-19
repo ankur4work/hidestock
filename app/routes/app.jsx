@@ -9,21 +9,30 @@ import { authenticate, PLAN_NAME, TRIAL_DAYS } from "../shopify.server";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
+// Set APP_BILLING_ENABLED=false to skip the in-app Billing API gate. Required when the
+// app uses Shopify "Managed Pricing" (Shopify collects payment before the app loads, and
+// the app-managed Billing API is disabled → billing.check would 403). Default: enabled.
+const BILLING_ENABLED = process.env.APP_BILLING_ENABLED !== "false";
+
 export const loader = async ({ request }) => {
   // authenticate.admin throws Responses for the embedded auth/token-exchange bounce —
   // it must stay OUTSIDE try/catch so those Responses propagate to Remix.
   const { billing } = await authenticate.admin(request);
 
-  // A billing-API hiccup must not crash the whole app; default to "not paid".
-  let hasActivePayment = false;
-  try {
-    const res = await billing.check({ plans: [PLAN_NAME] });
-    hasActivePayment = res.hasActivePayment;
-  } catch (error) {
-    console.error(
-      "Billing check failed:",
-      error?.body ? JSON.stringify(error.body) : error?.message || error,
-    );
+  // Default to allowing access; only gate when billing is enabled AND the check succeeds.
+  let hasActivePayment = true;
+  if (BILLING_ENABLED) {
+    try {
+      const res = await billing.check({ plans: [PLAN_NAME] });
+      hasActivePayment = res.hasActivePayment;
+    } catch (error) {
+      // Fail open so a billing misconfiguration (e.g. Managed Pricing) never bricks the app.
+      console.error(
+        "Billing check failed (allowing access):",
+        error?.body ? JSON.stringify(error.body) : error?.message || error,
+      );
+      hasActivePayment = true;
+    }
   }
 
   return json({
