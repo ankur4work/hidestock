@@ -10,11 +10,21 @@ import { authenticate, PLAN_NAME, TRIAL_DAYS } from "../shopify.server";
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
 export const loader = async ({ request }) => {
+  // authenticate.admin throws Responses for the embedded auth/token-exchange bounce —
+  // it must stay OUTSIDE try/catch so those Responses propagate to Remix.
   const { billing } = await authenticate.admin(request);
 
-  const { hasActivePayment } = await billing.check({
-    plans: [PLAN_NAME],
-  });
+  // A billing-API hiccup must not crash the whole app; default to "not paid".
+  let hasActivePayment = false;
+  try {
+    const res = await billing.check({ plans: [PLAN_NAME] });
+    hasActivePayment = res.hasActivePayment;
+  } catch (error) {
+    console.error(
+      "Billing check failed:",
+      error?.body ? JSON.stringify(error.body) : error?.message || error,
+    );
+  }
 
   return json({
     apiKey: process.env.SHOPIFY_API_KEY || "",

@@ -39,30 +39,37 @@ import { SetupStepsBlock } from "../components/SetupStepsBlock";
 const APP_HANDLE = process.env.APP_HANDLE || "hidestock";
 
 export const loader = async ({ request }) => {
+  // Keep authenticate.admin OUTSIDE try/catch so the thrown auth/redirect Responses
+  // (used by the embedded auth + token-exchange flow) propagate to Remix instead of
+  // being swallowed — swallowing them breaks token/scope refresh.
+  const { admin, session } = await authenticate.admin(request);
+  const { shop } = session;
+
+  // Data fetching is best-effort: a Shopify API error here must not 500 the page.
+  let settings = null;
+  let currentTheme = null;
+  let isEmbedEnabled = false;
+  let error = null;
+
   try {
-    const { admin, session } = await authenticate.admin(request);
-    const { shop } = session;
-
-    const settings = await getSettings(shop);
-    const currentTheme = await getCurrentTheme(admin);
-    const embedResult = await checkAppEmbedStatus(session, admin, APP_HANDLE);
-
-    return json({
-      shop,
-      settings,
-      currentTheme,
-      isEmbedEnabled: embedResult.isEnabled,
-    });
-  } catch (error) {
-    console.error("Loader error:", error);
-    return json({
-      shop: "unknown",
-      settings: null,
-      currentTheme: null,
-      isEmbedEnabled: false,
-      error: "Failed to load: " + error.message,
-    });
+    settings = await getSettings(shop);
+  } catch (e) {
+    console.error("getSettings failed:", e?.message || e);
+    error = "Failed to load settings";
   }
+
+  try {
+    currentTheme = await getCurrentTheme(admin);
+    const embedResult = await checkAppEmbedStatus(session, admin, APP_HANDLE);
+    isEmbedEnabled = embedResult.isEnabled;
+  } catch (e) {
+    console.error(
+      "Theme/embed lookup failed:",
+      e?.body ? JSON.stringify(e.body) : e?.message || e,
+    );
+  }
+
+  return json({ shop, settings, currentTheme, isEmbedEnabled, error });
 };
 
 export const action = async ({ request }) => {
