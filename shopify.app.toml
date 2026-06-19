@@ -4,7 +4,7 @@
 # After deploying to Coolify, set application_url / redirect / webhook URLs to your
 # Coolify domain, or run `shopify app config link` to sync from the Partner Dashboard.
 
-client_id = "REPLACE_WITH_YOUR_SHOPIFY_CLIENT_ID"
+client_id = "958a613936c6a38625a1451c1cace214"
 name = "HideStock"
 application_url = "https://REPLACE_WITH_YOUR_COOLIFY_DOMAIN"
 embedded = true
