@@ -19,19 +19,21 @@ export const loader = async ({ request }) => {
   // it must stay OUTSIDE try/catch so those Responses propagate to Remix.
   const { billing } = await authenticate.admin(request);
 
-  // Default to allowing access; only gate when billing is enabled AND the check succeeds.
-  let hasActivePayment = true;
+  // When billing is disabled (Managed Pricing handles payment), allow access.
+  // When billing is enabled (API billing), the merchant must have an active subscription.
+  let hasActivePayment = !BILLING_ENABLED;
   if (BILLING_ENABLED) {
     try {
       const res = await billing.check({ plans: [PLAN_NAME] });
       hasActivePayment = res.hasActivePayment;
     } catch (error) {
-      // Fail open so a billing misconfiguration (e.g. Managed Pricing) never bricks the app.
+      // Fail CLOSED: if we can't confirm payment, show the plan page (never free access).
+      // A 403 here means the app is on Managed Pricing in Partners — switch it to API billing.
       console.error(
-        "Billing check failed (allowing access):",
+        "Billing check failed (gating as unpaid):",
         error?.body ? JSON.stringify(error.body) : error?.message || error,
       );
-      hasActivePayment = true;
+      hasActivePayment = false;
     }
   }
 
