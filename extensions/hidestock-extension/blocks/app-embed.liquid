@@ -1,0 +1,116 @@
+{% comment %}
+  HideStock App Embed Block
+
+  Injects the hide-price.js script into the storefront and passes configuration
+  from Liquid. Settings are read from the shop metafield (synced when the merchant
+  saves in the HideStock admin). Block-level settings in the theme editor are used
+  only as a fallback for stores that haven't saved yet.
+{% endcomment %}
+
+{% if shop %}
+{% assign app_config = shop.metafields.hidestock.config.value %}
+<script id="hidestock-config" type="application/json">
+{
+  "shopDomain": "{{ shop.permanent_domain }}",
+  {% if app_config %}
+  "enabled": {{ app_config.enabled | default: false }},
+  "hideAddToCart": {{ app_config.hideAddToCart | default: true }},
+  "hideOnlyOutOfStock": {{ app_config.hideOnlyOutOfStock | default: true }},
+  "customMessage": {{ app_config.customMessage | default: "Price on Request" | json }},
+  "hideOnProductPage": {{ app_config.hideOnProductPage | default: true }},
+  "hideOnCollection": {{ app_config.hideOnCollection | default: true }},
+  "hideOnFeatured": {{ app_config.hideOnFeatured | default: true }},
+  "hideOnQuickView": {{ app_config.hideOnQuickView | default: true }},
+  {% else %}
+  "enabled": {% if block.settings.enabled == nil %}false{% else %}{{ block.settings.enabled }}{% endif %},
+  "hideAddToCart": {% if block.settings.hide_add_to_cart == nil %}true{% else %}{{ block.settings.hide_add_to_cart }}{% endif %},
+  "hideOnlyOutOfStock": {% if block.settings.hide_only_out_of_stock == nil %}true{% else %}{{ block.settings.hide_only_out_of_stock }}{% endif %},
+  "customMessage": {{ block.settings.custom_message | default: "Price on Request" | json }},
+  "hideOnProductPage": {% if block.settings.hide_on_product_page == nil %}true{% else %}{{ block.settings.hide_on_product_page }}{% endif %},
+  "hideOnCollection": {% if block.settings.hide_on_collection == nil %}true{% else %}{{ block.settings.hide_on_collection }}{% endif %},
+  "hideOnFeatured": {% if block.settings.hide_on_featured == nil %}true{% else %}{{ block.settings.hide_on_featured }}{% endif %},
+  "hideOnQuickView": {% if block.settings.hide_on_quick_view == nil %}true{% else %}{{ block.settings.hide_on_quick_view }}{% endif %},
+  {% endif %}
+  "_pageType": "{{ request.page_type }}",
+  "productAvailability": {
+    {% assign avail_first = true %}{% if product %}{% unless avail_first %},{% endunless %}"{{ product.handle }}": {{ product.available }}{% assign avail_first = false %}{% endif %}{% if collection %}{% for p in collection.products %}{% unless avail_first %},{% endunless %}"{{ p.handle }}": {{ p.available }}{% assign avail_first = false %}{% endfor %}{% endif %}{% if search and search.performed %}{% for item in search.results %}{% if item.object_type == 'product' %}{% unless avail_first %},{% endunless %}"{{ item.handle }}": {{ item.available }}{% assign avail_first = false %}{% endif %}{% endfor %}{% endif %}
+  }
+}
+</script>
+
+{% endif %}
+
+{% schema %}
+{
+  "name": "HideStock",
+  "target": "head",
+  "stylesheet": "hide-price.css",
+  "javascript": "hide-price.js",
+  "settings": [
+    {
+      "type": "header",
+      "content": "General Settings"
+    },
+    {
+      "type": "paragraph",
+      "content": "Settings are managed from the HideStock app admin. The options below are fallback defaults used only before you save settings in the app."
+    },
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Enable price hiding",
+      "default": false,
+      "info": "Turn the app functionality on or off"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_only_out_of_stock",
+      "label": "Hide only when out of stock",
+      "default": true,
+      "info": "When unchecked, hides prices for all products"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_add_to_cart",
+      "label": "Hide Add to Cart button",
+      "default": true,
+      "info": "Also hide the Add to Cart button for affected products"
+    },
+    {
+      "type": "text",
+      "id": "custom_message",
+      "label": "Custom message",
+      "default": "Price on Request",
+      "info": "Message to display instead of the price"
+    },
+    {
+      "type": "header",
+      "content": "Location Settings"
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_on_product_page",
+      "label": "Product pages",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_on_collection",
+      "label": "Collection pages",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_on_featured",
+      "label": "Featured product sections",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "hide_on_quick_view",
+      "label": "Quick view modals",
+      "default": true
+    }
+  ]
+}
+{% endschema %}

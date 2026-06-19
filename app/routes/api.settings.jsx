@@ -1,0 +1,47 @@
+import { json } from "@remix-run/node";
+import { cors } from "remix-utils/cors";
+import { getSettingsForStorefront } from "../models/settings.server";
+
+const SHOP_DOMAIN_RE = /^[a-zA-Z0-9][a-zA-Z0-9-]*\.myshopify\.com$/;
+
+/**
+ * API endpoint to serve settings to the storefront theme extension.
+ * Called as a fallback by the hide-price.js script.
+ */
+export const loader = async ({ request }) => {
+  const url = new URL(request.url);
+  const shop = url.searchParams.get("shop");
+
+  if (!shop || !SHOP_DOMAIN_RE.test(shop)) {
+    return json({ error: "Valid shop parameter required" }, { status: 400 });
+  }
+
+  try {
+    const settings = await getSettingsForStorefront(shop);
+
+    const response = json({
+      success: true,
+      settings,
+    });
+
+    return cors(request, response, {
+      origin: true,
+      methods: ["GET"],
+      maxAge: 86400,
+    });
+  } catch (error) {
+    return json({ error: "Failed to fetch settings" }, { status: 500 });
+  }
+};
+
+// Handle OPTIONS preflight requests
+export const action = async ({ request }) => {
+  if (request.method === "OPTIONS") {
+    return cors(request, new Response(null, { status: 204 }), {
+      origin: true,
+      methods: ["GET"],
+      maxAge: 86400,
+    });
+  }
+  return json({ error: "Method not allowed" }, { status: 405 });
+};

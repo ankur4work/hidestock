@@ -1,0 +1,9 @@
+.hidestock-hidden {
+  display: none !important;
+}
+
+.hidestock-message {
+  font-weight: 600;
+  color: inherit;
+  opacity: 0.85;
+}
