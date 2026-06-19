@@ -10,8 +10,23 @@ import {
   Divider,
   List,
 } from "@shopify/polaris";
-import { ExternalIcon } from "@shopify/polaris-icons";
 import { useFetcher } from "@remix-run/react";
+
+// Inline external-link icon so we don't depend on @shopify/polaris-icons.
+function ExternalIcon() {
+  return (
+    <svg viewBox="0 0 20 20" focusable="false" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 3a1 1 0 0 0 0 2h1.586l-5.293 5.293a1 1 0 0 0 1.414 1.414L15 6.414V8a1 1 0 1 0 2 0V4a1 1 0 0 0-1-1h-4Z"
+      />
+      <path
+        fill="currentColor"
+        d="M5 5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-3a1 1 0 1 0-2 0v3H5V7h3a1 1 0 0 0 0-2H5Z"
+      />
+    </svg>
+  );
+}
 
 /**
  * SetupStepsBlock — redesigned guided setup with a numbered step tracker.
