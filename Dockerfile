@@ -10,7 +10,8 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json* ./
 
 # Install with devDependencies available so the Vite/Remix build can run.
-RUN npm install --include=dev && npm cache clean --force
+# --legacy-peer-deps matches the local .npmrc (the prisma-storage v6 peer wants @prisma/client v6).
+RUN npm install --include=dev --legacy-peer-deps && npm cache clean --force
 
 COPY . .
 
