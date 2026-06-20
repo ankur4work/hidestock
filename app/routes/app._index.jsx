@@ -30,7 +30,7 @@ import {
   sanitizeSettings,
   parseFormData,
 } from "../utils/validation";
-import { getThemeAndEmbedStatus } from "../utils/appBridge";
+import { getThemeAndEmbedStatus, safeErr } from "../utils/appBridge";
 import { HeroBanner } from "../components/HeroBanner";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { SetupStepsBlock } from "../components/SetupStepsBlock";
@@ -44,6 +44,18 @@ export const loader = async ({ request }) => {
   // being swallowed — swallowing them breaks token/scope refresh.
   const { admin, session } = await authenticate.admin(request);
   const { shop } = session;
+
+  // --- TEMP DIAGNOSTIC: why do admin API calls 403? ---
+  console.log("DIAG scope:", session?.scope, "| isOnline:", session?.isOnline);
+  try {
+    const r = await admin.graphql(`#graphql
+      { shop { id name } }`);
+    const d = await r.json();
+    console.log("DIAG shop query OK:", JSON.stringify(d?.data || d).slice(0, 200));
+  } catch (e) {
+    console.log("DIAG shop query FAILED:", safeErr(e));
+  }
+  // --- END DIAGNOSTIC ---
 
   // Data fetching is best-effort: a Shopify API error here must not 500 the page.
   let settings = null;
