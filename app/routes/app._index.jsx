@@ -1,5 +1,9 @@
 import { json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import {
+  useLoaderData,
+  useRouteLoaderData,
+  useFetcher,
+} from "@remix-run/react";
 import {
   Page,
   Layout,
@@ -11,6 +15,8 @@ import {
   Box,
   InlineStack,
   Badge,
+  Button,
+  List,
 } from "@shopify/polaris";
 import { TitleBar } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -119,10 +125,140 @@ export const action = async ({ request }) => {
 };
 
 /**
+ * Plan Selection Page — shown when the merchant has no active subscription.
+ */
+function PlanSelectionPage({ planName, planPrice, planCurrency, trialDays }) {
+  const fetcher = useFetcher();
+  const isSubscribing = fetcher.state === "submitting";
+
+  const features = [
+    "Automatically hide prices for out-of-stock products",
+    "Hide the Add to Cart button",
+    "Custom replacement message",
+    "Works on product pages, collections & featured sections",
+    "Quick view modal support",
+    "Real-time inventory detection",
+    "Theme-agnostic — works with any Shopify theme",
+  ];
+
+  return (
+    <Page>
+      <TitleBar title="HideStock" />
+      <BlockStack gap="500">
+        <HeroBanner enabled={false} embedEnabled={false} />
+
+        <Layout>
+          <Layout.Section>
+            <Card>
+              <BlockStack gap="400">
+                <InlineStack align="space-between" blockAlign="center">
+                  <BlockStack gap="100">
+                    <Text variant="headingLg" as="h2">
+                      {planName} plan
+                    </Text>
+                    <Text variant="bodyMd" tone="subdued">
+                      Full access to every HideStock feature
+                    </Text>
+                  </BlockStack>
+                  <BlockStack gap="100">
+                    <Text variant="headingXl" as="p" alignment="end">
+                      ${planPrice}
+                    </Text>
+                    <Text variant="bodySm" tone="subdued" alignment="end">
+                      {planCurrency} / month
+                    </Text>
+                  </BlockStack>
+                </InlineStack>
+
+                {trialDays > 0 && (
+                  <Banner tone="success">
+                    <p>{trialDays}-day free trial — no charge until the trial ends.</p>
+                  </Banner>
+                )}
+
+                {fetcher.data?.subscribeError && (
+                  <Banner tone="critical">
+                    <p>{fetcher.data.subscribeError}</p>
+                  </Banner>
+                )}
+
+                <Divider />
+
+                <List>
+                  {features.map((f) => (
+                    <List.Item key={f}>{f}</List.Item>
+                  ))}
+                </List>
+
+                <fetcher.Form method="post" action="/app">
+                  <input type="hidden" name="action" value="subscribe" />
+                  <Button
+                    variant="primary"
+                    size="large"
+                    fullWidth
+                    submit
+                    loading={isSubscribing}
+                  >
+                    {trialDays > 0
+                      ? `Start ${trialDays}-day free trial — then $${planPrice}/month`
+                      : `Subscribe — $${planPrice}/month`}
+                  </Button>
+                </fetcher.Form>
+
+                <Text variant="bodySm" tone="subdued" alignment="center">
+                  Cancel anytime from your Shopify admin.
+                </Text>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section variant="oneThird">
+            <Card>
+              <BlockStack gap="300">
+                <Text variant="headingMd" as="h2">
+                  Why HideStock?
+                </Text>
+                <Divider />
+                <Text variant="bodyMd" tone="subdued">
+                  Stop showing prices on products you can’t sell. When inventory hits
+                  zero, HideStock automatically replaces the price with your custom
+                  message — and can hide Add to Cart too.
+                </Text>
+                <Text variant="bodyMd" tone="subdued">
+                  Works instantly with any Shopify theme. No code required.
+                </Text>
+              </BlockStack>
+            </Card>
+          </Layout.Section>
+        </Layout>
+      </BlockStack>
+    </Page>
+  );
+}
+
+/**
  * Main Dashboard
  */
 export default function Index() {
   const loaderData = useLoaderData();
+  const parentData = useRouteLoaderData("routes/app");
+
+  const hasActivePayment = parentData?.hasActivePayment;
+  const planName = parentData?.planName || "Pro";
+  const planPrice = parentData?.planPrice || "20";
+  const planCurrency = parentData?.planCurrency || "USD";
+  const trialDays = parentData?.trialDays ?? 3;
+
+  if (!hasActivePayment) {
+    return (
+      <PlanSelectionPage
+        planName={planName}
+        planPrice={planPrice}
+        planCurrency={planCurrency}
+        trialDays={trialDays}
+      />
+    );
+  }
 
   const {
     shop,
