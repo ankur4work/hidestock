@@ -32,7 +32,7 @@ const LOCATIONS = [
 ];
 
 /**
- * SettingsPanel — redesigned HideStock settings form with a built-in
+ * SettingsPanel — redesigned StockMask settings form with a built-in
  * live storefront preview that updates as the merchant edits.
  */
 export function SettingsPanel({ settings }) {
@@ -106,7 +106,7 @@ export function SettingsPanel({ settings }) {
               Price hiding
             </Text>
             <Text variant="bodyMd" tone="subdued">
-              The master switch for HideStock on your storefront.
+              The master switch for StockMask on your storefront.
             </Text>
           </div>
           <label className={`hs-switch ${formState.enabled ? "is-on" : ""}`}>

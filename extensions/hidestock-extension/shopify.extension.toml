@@ -3,7 +3,7 @@ api_version = "2024-04"
 [[extensions]]
 uid = "7d3f9a21-5c84-4e62-9b17-2af0c1e6d8b4"
 type = "theme"
-name = "HideStock"
+name = "StockMask"
 handle = "hidestock-extension"
 
 [[extensions.assets]]
@@ -16,5 +16,5 @@ file = "assets/hide-price.css"
 
 [[extensions.blocks]]
 type = "app_embed"
-name = "HideStock"
+name = "StockMask"
 file = "blocks/app-embed.liquid"

@@ -1,9 +1,9 @@
 {% comment %}
-  HideStock App Embed Block
+  StockMask App Embed Block
 
   Injects the hide-price.js script into the storefront and passes configuration
   from Liquid. Settings are read from the shop metafield (synced when the merchant
-  saves in the HideStock admin). Block-level settings in the theme editor are used
+  saves in the StockMask admin). Block-level settings in the theme editor are used
   only as a fallback for stores that haven't saved yet.
 {% endcomment %}
 
@@ -42,7 +42,7 @@
 
 {% schema %}
 {
-  "name": "HideStock",
+  "name": "StockMask",
   "target": "head",
   "stylesheet": "hide-price.css",
   "javascript": "hide-price.js",
@@ -53,7 +53,7 @@
     },
     {
       "type": "paragraph",
-      "content": "Settings are managed from the HideStock app admin. The options below are fallback defaults used only before you save settings in the app."
+      "content": "Settings are managed from the StockMask app admin. The options below are fallback defaults used only before you save settings in the app."
     },
     {
       "type": "checkbox",

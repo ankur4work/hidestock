@@ -1,5 +1,5 @@
 /**
- * HeroBanner — branded gradient header for the HideStock dashboard.
+ * HeroBanner — branded gradient header for the StockMask dashboard.
  * Presentational only; reflects the currently saved status.
  */
 export function HeroBanner({ enabled, embedEnabled, shop }) {
@@ -24,7 +24,7 @@ export function HeroBanner({ enabled, embedEnabled, shop }) {
               </svg>
             </div>
             <div>
-              <div className="hs-hero__name">HideStock</div>
+              <div className="hs-hero__name">StockMask</div>
               <div className="hs-hero__tagline">
                 Hide prices automatically when products sell out
               </div>

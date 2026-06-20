@@ -106,9 +106,9 @@ export async function syncSettingsToStorefront(admin, settings) {
   // 1. Ensure metafield definition exists (idempotent — ignore TAKEN error)
   try {
     await admin.graphql(`
-      mutation CreateHideStockMetafieldDef {
+      mutation CreateStockMaskMetafieldDef {
         metafieldDefinitionCreate(definition: {
-          name: "HideStock Config"
+          name: "StockMask Config"
           namespace: "${METAFIELD_NAMESPACE}"
           key: "${METAFIELD_KEY}"
           type: "json"

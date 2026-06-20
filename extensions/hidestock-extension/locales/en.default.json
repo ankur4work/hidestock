@@ -1,11 +1,11 @@
 {
   "app": {
-    "name": "HideStock",
+    "name": "StockMask",
     "description": "Automatically hide product prices when out of stock"
   },
   "blocks": {
     "app_embed": {
-      "name": "HideStock",
+      "name": "StockMask",
       "settings": {
         "enabled": {
           "label": "Enable price hiding"

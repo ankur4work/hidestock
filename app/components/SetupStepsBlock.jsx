@@ -74,11 +74,11 @@ export function SetupStepsBlock({
     fetcher.formData?.get("action") === "checkEmbed";
 
   const steps = [
-    { done: true, title: "App installed", body: "HideStock is connected to your store." },
+    { done: true, title: "App installed", body: "StockMask is connected to your store." },
     {
       done: embedStatus || acknowledged,
       title: "Enable the theme embed",
-      body: "Activate HideStock in your theme so it can run on the storefront.",
+      body: "Activate StockMask in your theme so it can run on the storefront.",
     },
   ];
   const completed = steps.filter((s) => s.done).length;
@@ -120,7 +120,7 @@ export function SetupStepsBlock({
 
           {embedStatus ? (
             <Banner tone="success" title="Storefront active">
-              <p>HideStock is live on your theme and will hide prices per your settings.</p>
+              <p>StockMask is live on your theme and will hide prices per your settings.</p>
             </Banner>
           ) : acknowledged ? (
             <Banner tone="info" title="Marked as enabled">
@@ -136,14 +136,14 @@ export function SetupStepsBlock({
               <Banner tone="info" title="Enable the theme embed">
                 <p>
                   Shopify limits apps from reading your theme, so we can’t always
-                  auto-confirm this. Enable HideStock in the theme editor below — it works
+                  auto-confirm this. Enable StockMask in the theme editor below — it works
                   on your storefront as soon as it’s on.
                 </p>
               </Banner>
               <List type="number">
                 <List.Item>Click “Open theme editor” below.</List.Item>
                 <List.Item>
-                  Find <strong>HideStock</strong> in the App embeds section.
+                  Find <strong>StockMask</strong> in the App embeds section.
                 </List.Item>
                 <List.Item>Toggle it on and click Save.</List.Item>
               </List>
@@ -160,7 +160,7 @@ export function SetupStepsBlock({
               <List type="number">
                 <List.Item>Click “Open theme editor” below.</List.Item>
                 <List.Item>
-                  Find <strong>HideStock</strong> in the App embeds section.
+                  Find <strong>StockMask</strong> in the App embeds section.
                 </List.Item>
                 <List.Item>Toggle it on and click Save.</List.Item>
                 <List.Item>Return here and click “Verify”.</List.Item>

@@ -145,7 +145,7 @@ function PlanSelectionPage({ pricingUrl }) {
 
   return (
     <Page>
-      <TitleBar title="HideStock" />
+      <TitleBar title="StockMask" />
       <BlockStack gap="500">
         <HeroBanner enabled={false} embedEnabled={false} />
 
@@ -185,12 +185,12 @@ function PlanSelectionPage({ pricingUrl }) {
             <Card>
               <BlockStack gap="300">
                 <Text variant="headingMd" as="h2">
-                  Why HideStock?
+                  Why StockMask?
                 </Text>
                 <Divider />
                 <Text variant="bodyMd" tone="subdued">
                   Stop showing prices on products you can’t sell. When inventory hits
-                  zero, HideStock automatically replaces the price with your custom
+                  zero, StockMask automatically replaces the price with your custom
                   message — and can hide Add to Cart too.
                 </Text>
                 <Text variant="bodyMd" tone="subdued">
@@ -230,7 +230,7 @@ export default function Index() {
 
   return (
     <Page>
-      <TitleBar title="HideStock" />
+      <TitleBar title="StockMask" />
 
       <BlockStack gap="500">
         {loaderError && (
@@ -268,7 +268,7 @@ export default function Index() {
                   <Divider />
                   <BlockStack gap="200">
                     <Text variant="bodyMd" tone="subdued">
-                      When a product’s inventory reaches zero, HideStock:
+                      When a product’s inventory reaches zero, StockMask:
                     </Text>
                     <Box paddingInlineStart="200">
                       <BlockStack gap="100">

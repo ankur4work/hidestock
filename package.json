@@ -2,7 +2,7 @@
   "name": "hidestock",
   "version": "1.0.0",
   "private": true,
-  "description": "HideStock — automatically hide product prices when out of stock",
+  "description": "StockMask — automatically hide product prices when out of stock",
   "scripts": {
     "build": "npx prisma generate && npx remix vite:build",
     "dev": "shopify app dev",

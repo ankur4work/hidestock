@@ -1,4 +1,4 @@
-# HideStock — Hide Price When Out of Stock
+# StockMask — Hide Price When Out of Stock
 
 A Shopify embedded app that automatically hides product prices when inventory
 reaches zero, replacing them with a custom message. Built with Remix, Polaris,

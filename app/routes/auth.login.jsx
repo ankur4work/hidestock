@@ -45,7 +45,7 @@ export default function Auth() {
       <Card>
         <BlockStack gap="400">
           <Text variant="headingLg" as="h1">
-            Log in to HideStock
+            Log in to StockMask
           </Text>
           <Text variant="bodyMd" as="p">
             Enter your shop domain to log in or install the app.
