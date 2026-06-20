@@ -45,15 +45,29 @@ export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
   const { shop } = session;
 
-  // --- TEMP DIAGNOSTIC: why do admin API calls 403? ---
-  console.log("DIAG scope:", session?.scope, "| isOnline:", session?.isOnline);
+  // --- TEMP DIAGNOSTIC: capture Shopify's RAW 403 message (GraphQL client hides it) ---
+  console.log(
+    "DIAG scope:", session?.scope,
+    "| isOnline:", session?.isOnline,
+    "| tokenLen:", session?.accessToken?.length,
+    "| tokenPrefix:", String(session?.accessToken || "").slice(0, 6),
+  );
   try {
-    const r = await admin.graphql(`#graphql
-      { shop { id name } }`);
-    const d = await r.json();
-    console.log("DIAG shop query OK:", JSON.stringify(d?.data || d).slice(0, 200));
+    const res = await fetch(
+      `https://${session.shop}/admin/api/2025-07/graphql.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": session.accessToken || "",
+        },
+        body: JSON.stringify({ query: "{ shop { id name } }" }),
+      },
+    );
+    const body = await res.text();
+    console.log("DIAG raw admin API status:", res.status, "| body:", body.slice(0, 500));
   } catch (e) {
-    console.log("DIAG shop query FAILED:", safeErr(e));
+    console.log("DIAG raw fetch threw:", safeErr(e));
   }
   // --- END DIAGNOSTIC ---
 
