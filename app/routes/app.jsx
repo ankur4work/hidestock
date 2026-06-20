@@ -5,69 +5,44 @@ import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { AppProvider as PolarisProvider } from "@shopify/polaris";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
-import { authenticate, PLAN_NAME, TRIAL_DAYS } from "../shopify.server";
+import { authenticate } from "../shopify.server";
 import { safeErr } from "../utils/appBridge";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
-// Set APP_BILLING_ENABLED=false to skip the in-app Billing API gate. Required when the
-// app uses Shopify "Managed Pricing" (Shopify collects payment before the app loads, and
-// the app-managed Billing API is disabled → billing.check would 403). Default: enabled.
-const BILLING_ENABLED = process.env.APP_BILLING_ENABLED !== "false";
+// App handle (for the Shopify-hosted Managed Pricing page URL). Must match the app handle.
+const APP_HANDLE = process.env.APP_HANDLE || "hidestock";
 
 export const loader = async ({ request }) => {
-  // authenticate.admin throws Responses for the embedded auth/token-exchange bounce —
-  // it must stay OUTSIDE try/catch so those Responses propagate to Remix.
-  const { billing } = await authenticate.admin(request);
+  // authenticate.admin must stay OUTSIDE try/catch so its auth Responses propagate to Remix.
+  const { admin, session } = await authenticate.admin(request);
 
-  // When billing is disabled (Managed Pricing handles payment), allow access.
-  // When billing is enabled (API billing), the merchant must have an active subscription.
-  let hasActivePayment = !BILLING_ENABLED;
-  if (BILLING_ENABLED) {
-    try {
-      const res = await billing.check({ plans: [PLAN_NAME] });
-      hasActivePayment = res.hasActivePayment;
-    } catch (error) {
-      // Fail CLOSED: if we can't confirm payment, show the plan page (never free access).
-      // A 403 here means the app is on Managed Pricing in Partners — switch it to API billing.
-      console.error("Billing check failed (gating as unpaid):", safeErr(error));
-      hasActivePayment = false;
-    }
+  // Managed Pricing: the merchant subscribes on Shopify's hosted pricing page. We just check
+  // whether they have an active subscription. Fail CLOSED so unpaid merchants see the plan page.
+  let hasActivePayment = false;
+  try {
+    const res = await admin.graphql(`#graphql
+      query {
+        currentAppInstallation {
+          activeSubscriptions { id name status }
+        }
+      }`);
+    const data = await res.json();
+    const subs = data?.data?.currentAppInstallation?.activeSubscriptions || [];
+    hasActivePayment = subs.some((s) => s.status === "ACTIVE");
+  } catch (error) {
+    console.error("Subscription check failed (gating as unpaid):", safeErr(error));
+    hasActivePayment = false;
   }
+
+  const store = session.shop.replace(".myshopify.com", "");
+  const pricingUrl = `https://admin.shopify.com/store/${store}/charges/${APP_HANDLE}/pricing_plans`;
 
   return json({
     apiKey: process.env.SHOPIFY_API_KEY || "",
     hasActivePayment,
-    planName: PLAN_NAME,
-    planPrice: process.env.APP_PLAN_PRICE || "20",
-    planCurrency: process.env.APP_PLAN_CURRENCY || "USD",
-    trialDays: TRIAL_DAYS,
+    pricingUrl,
   });
-};
-
-export const action = async ({ request }) => {
-  const { billing } = await authenticate.admin(request);
-  const formData = await request.formData();
-
-  if (BILLING_ENABLED && formData.get("action") === "subscribe") {
-    // Set APP_BILLING_TEST=true to create test charges (no real money) on dev/staging.
-    const isTest = process.env.APP_BILLING_TEST === "true";
-    try {
-      // On success this THROWS a redirect Response to Shopify's confirmation page.
-      return await billing.request({ plan: PLAN_NAME, isTest });
-    } catch (error) {
-      if (error instanceof Response) throw error; // redirect — let Remix handle it
-      // A non-Response error here means Shopify rejected the charge (e.g. the app is on
-      // Managed Pricing). Show a message instead of crashing the page.
-      console.error("billing.request failed:", safeErr(error));
-      return json({
-        subscribeError:
-          "Couldn't start checkout. This app must use API billing — remove the Managed Pricing plans for it in the Partner Dashboard, then try again.",
-      });
-    }
-  }
-
-  return null;
 };
 
 export default function App() {

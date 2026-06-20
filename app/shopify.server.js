@@ -2,18 +2,14 @@ import "@shopify/shopify-app-remix/adapters/node";
 import {
   ApiVersion,
   AppDistribution,
-  BillingInterval,
   DeliveryMethod,
   shopifyApp,
 } from "@shopify/shopify-app-remix/server";
 import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
 import prisma from "./db.server";
 
-// Billing — change these from env vars, no code changes needed
-const PLAN_PRICE = parseFloat(process.env.APP_PLAN_PRICE || "20");
-export const TRIAL_DAYS = parseInt(process.env.APP_TRIAL_DAYS || "3", 10);
-
-export const PLAN_NAME = process.env.APP_PLAN_NAME || "Pro";
+// Billing is handled by Shopify Managed Pricing (plans configured in the Partner Dashboard).
+// The app declares NO code-side billing config; it only checks for an active subscription.
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
@@ -28,14 +24,6 @@ const shopify = shopifyApp({
   authPathPrefix: "/auth",
   sessionStorage: new PrismaSessionStorage(prisma),
   distribution: AppDistribution.AppStore,
-  billing: {
-    [PLAN_NAME]: {
-      amount: PLAN_PRICE,
-      currencyCode: process.env.APP_PLAN_CURRENCY || "USD",
-      interval: BillingInterval.Every30Days,
-      trialDays: TRIAL_DAYS,
-    },
-  },
   webhooks: {
     APP_UNINSTALLED: {
       deliveryMethod: DeliveryMethod.Http,

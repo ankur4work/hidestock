@@ -45,32 +45,6 @@ export const loader = async ({ request }) => {
   const { admin, session } = await authenticate.admin(request);
   const { shop } = session;
 
-  // --- TEMP DIAGNOSTIC: capture Shopify's RAW 403 message (GraphQL client hides it) ---
-  console.log(
-    "DIAG scope:", session?.scope,
-    "| isOnline:", session?.isOnline,
-    "| tokenLen:", session?.accessToken?.length,
-    "| tokenPrefix:", String(session?.accessToken || "").slice(0, 6),
-  );
-  try {
-    const res = await fetch(
-      `https://${session.shop}/admin/api/2025-07/graphql.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": session.accessToken || "",
-        },
-        body: JSON.stringify({ query: "{ shop { id name } }" }),
-      },
-    );
-    const body = await res.text();
-    console.log("DIAG raw admin API status:", res.status, "| body:", body.slice(0, 500));
-  } catch (e) {
-    console.log("DIAG raw fetch threw:", safeErr(e));
-  }
-  // --- END DIAGNOSTIC ---
-
   // Data fetching is best-effort: a Shopify API error here must not 500 the page.
   let settings = null;
   let currentTheme = null;
@@ -152,11 +126,9 @@ export const action = async ({ request }) => {
 
 /**
  * Plan Selection Page — shown when the merchant has no active subscription.
+ * Managed Pricing: the button sends them to Shopify's hosted pricing page.
  */
-function PlanSelectionPage({ planName, planPrice, planCurrency, trialDays }) {
-  const fetcher = useFetcher();
-  const isSubscribing = fetcher.state === "submitting";
-
+function PlanSelectionPage({ pricingUrl }) {
   const features = [
     "Automatically hide prices for out-of-stock products",
     "Hide the Add to Cart button",
@@ -166,6 +138,10 @@ function PlanSelectionPage({ planName, planPrice, planCurrency, trialDays }) {
     "Real-time inventory detection",
     "Theme-agnostic — works with any Shopify theme",
   ];
+
+  const goToPricing = () => {
+    if (pricingUrl) window.open(pricingUrl, "_top");
+  };
 
   return (
     <Page>
@@ -177,36 +153,14 @@ function PlanSelectionPage({ planName, planPrice, planCurrency, trialDays }) {
           <Layout.Section>
             <Card>
               <BlockStack gap="400">
-                <InlineStack align="space-between" blockAlign="center">
-                  <BlockStack gap="100">
-                    <Text variant="headingLg" as="h2">
-                      {planName} plan
-                    </Text>
-                    <Text variant="bodyMd" tone="subdued">
-                      Full access to every HideStock feature
-                    </Text>
-                  </BlockStack>
-                  <BlockStack gap="100">
-                    <Text variant="headingXl" as="p" alignment="end">
-                      ${planPrice}
-                    </Text>
-                    <Text variant="bodySm" tone="subdued" alignment="end">
-                      {planCurrency} / month
-                    </Text>
-                  </BlockStack>
-                </InlineStack>
-
-                {trialDays > 0 && (
-                  <Banner tone="success">
-                    <p>{trialDays}-day free trial — no charge until the trial ends.</p>
-                  </Banner>
-                )}
-
-                {fetcher.data?.subscribeError && (
-                  <Banner tone="critical">
-                    <p>{fetcher.data.subscribeError}</p>
-                  </Banner>
-                )}
+                <BlockStack gap="100">
+                  <Text variant="headingLg" as="h2">
+                    Choose your plan
+                  </Text>
+                  <Text variant="bodyMd" tone="subdued">
+                    Subscribe to start hiding prices on out-of-stock products.
+                  </Text>
+                </BlockStack>
 
                 <Divider />
 
@@ -216,23 +170,12 @@ function PlanSelectionPage({ planName, planPrice, planCurrency, trialDays }) {
                   ))}
                 </List>
 
-                <fetcher.Form method="post" action="/app">
-                  <input type="hidden" name="action" value="subscribe" />
-                  <Button
-                    variant="primary"
-                    size="large"
-                    fullWidth
-                    submit
-                    loading={isSubscribing}
-                  >
-                    {trialDays > 0
-                      ? `Start ${trialDays}-day free trial — then $${planPrice}/month`
-                      : `Subscribe — $${planPrice}/month`}
-                  </Button>
-                </fetcher.Form>
+                <Button variant="primary" size="large" fullWidth onClick={goToPricing}>
+                  View plans & subscribe
+                </Button>
 
                 <Text variant="bodySm" tone="subdued" alignment="center">
-                  Cancel anytime from your Shopify admin.
+                  You’ll pick a plan on Shopify’s secure billing page. Cancel anytime.
                 </Text>
               </BlockStack>
             </Card>
@@ -270,20 +213,10 @@ export default function Index() {
   const parentData = useRouteLoaderData("routes/app");
 
   const hasActivePayment = parentData?.hasActivePayment;
-  const planName = parentData?.planName || "Pro";
-  const planPrice = parentData?.planPrice || "20";
-  const planCurrency = parentData?.planCurrency || "USD";
-  const trialDays = parentData?.trialDays ?? 3;
+  const pricingUrl = parentData?.pricingUrl;
 
   if (!hasActivePayment) {
-    return (
-      <PlanSelectionPage
-        planName={planName}
-        planPrice={planPrice}
-        planCurrency={planCurrency}
-        trialDays={trialDays}
-      />
-    );
+    return <PlanSelectionPage pricingUrl={pricingUrl} />;
   }
 
   const {
