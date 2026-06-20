@@ -3,6 +3,22 @@
  */
 
 /**
+ * Turn any thrown value into a short, safe string for logging.
+ * NEVER throws (some Shopify errors carry a ReadableStream body that JSON.stringify chokes on).
+ */
+export function safeErr(error) {
+  try {
+    if (!error) return "unknown error";
+    if (typeof error === "string") return error;
+    const code = error.response?.code || error.status;
+    if (code) return `HTTP ${code} ${error.response?.statusText || ""}`.trim();
+    return error.message || String(error);
+  } catch (_) {
+    return "unserializable error";
+  }
+}
+
+/**
  * Generate the theme editor deep link URL for enabling the app embed
  */
 export function getThemeEditorUrl(shop, extensionUuid) {
@@ -83,10 +99,7 @@ export async function getThemeAndEmbedStatus(admin, appHandle) {
 
     return { theme: { id: theme.id, name: theme.name }, isEnabled, checkFailed: false };
   } catch (error) {
-    console.error(
-      "Embed status check failed:",
-      error?.body ? JSON.stringify(error.body) : error?.message || error,
-    );
+    console.error("Embed status check failed:", safeErr(error));
     return { theme: null, isEnabled: false, checkFailed: true };
   }
 }

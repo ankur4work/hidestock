@@ -6,6 +6,7 @@ import { AppProvider as PolarisProvider } from "@shopify/polaris";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
 import { authenticate, PLAN_NAME, TRIAL_DAYS } from "../shopify.server";
+import { safeErr } from "../utils/appBridge";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -29,10 +30,7 @@ export const loader = async ({ request }) => {
     } catch (error) {
       // Fail CLOSED: if we can't confirm payment, show the plan page (never free access).
       // A 403 here means the app is on Managed Pricing in Partners — switch it to API billing.
-      console.error(
-        "Billing check failed (gating as unpaid):",
-        error?.body ? JSON.stringify(error.body) : error?.message || error,
-      );
+      console.error("Billing check failed (gating as unpaid):", safeErr(error));
       hasActivePayment = false;
     }
   }
