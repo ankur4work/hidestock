@@ -18,7 +18,7 @@ export const PLAN_NAME = process.env.APP_PLAN_NAME || "Pro";
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET || "",
-  apiVersion: ApiVersion.April24,
+  apiVersion: ApiVersion.July25,
   scopes: process.env.SCOPES?.split(",") || [
     "read_products",
     "read_inventory",
@@ -56,8 +56,8 @@ const shopify = shopifyApp({
     },
   },
   future: {
-    v3_webhookAdminContext: true,
-    v3_authenticatePublic: true,
+    // Token exchange — in v3 + shopify-api v11 this also refreshes the now-expiring
+    // offline access tokens (mandated for public apps from 2026-04), fixing the 403s.
     unstable_newEmbeddedAuthStrategy: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
@@ -66,7 +66,7 @@ const shopify = shopifyApp({
 });
 
 export default shopify;
-export const apiVersion = ApiVersion.April24;
+export const apiVersion = ApiVersion.July25;
 export const addDocumentResponseHeaders = shopify.addDocumentResponseHeaders;
 export const authenticate = shopify.authenticate;
 export const unauthenticated = shopify.unauthenticated;
