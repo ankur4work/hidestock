@@ -56,9 +56,10 @@ const shopify = shopifyApp({
     },
   },
   future: {
-    // Token exchange — in v3 + shopify-api v11 this also refreshes the now-expiring
-    // offline access tokens (mandated for public apps from 2026-04), fixing the 403s.
     unstable_newEmbeddedAuthStrategy: true,
+    // REQUIRED since 2026-04: Shopify rejects non-expiring offline tokens on the Admin API.
+    // This makes token exchange request expiring tokens (expiring=1), fixing the 403s.
+    expiringOfflineAccessTokens: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
