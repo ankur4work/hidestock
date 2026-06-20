@@ -19,78 +19,94 @@ export function getExtensionsHubUrl(shop) {
 }
 
 /**
- * Check if the app embed block is enabled in the live theme.
- * Reads settings_data.json via REST Asset API and looks for our extension handle.
+ * Read the main theme AND whether our app embed block is enabled, in ONE GraphQL call.
+ *
+ * Uses the GraphQL Admin API `OnlineStoreTheme.files` to read config/settings_data.json
+ * (the REST Asset API is deprecated/restricted and returns 403). Requires the read_themes
+ * scope. Returns { theme, isEnabled, checkFailed } — checkFailed=true means we could not
+ * read the theme (e.g. Shopify blocked it), so the UI should NOT claim it's disabled.
  */
-export async function checkAppEmbedStatus(session, admin, extensionHandle) {
+export async function getThemeAndEmbedStatus(admin, appHandle) {
   try {
-    if (!session?.accessToken) {
-      return { isEnabled: false };
+    const response = await admin.graphql(
+      `#graphql
+        query themeEmbedStatus {
+          themes(first: 1, roles: [MAIN]) {
+            nodes {
+              id
+              name
+              files(filenames: ["config/settings_data.json"]) {
+                nodes {
+                  body {
+                    ... on OnlineStoreThemeFileBodyText { content }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+    );
+
+    const data = await response.json();
+
+    if (data?.errors) {
+      console.error("Theme embed query errors:", JSON.stringify(data.errors));
+      return { theme: null, isEnabled: false, checkFailed: true };
     }
 
-    const theme = await getCurrentTheme(admin);
+    const theme = data?.data?.themes?.nodes?.[0] || null;
     if (!theme) {
-      return { isEnabled: false };
+      return { theme: null, isEnabled: false, checkFailed: true };
     }
 
-    const themeId = theme.id.replace("gid://shopify/OnlineStoreTheme/", "");
-
-    const url = `https://${session.shop}/admin/api/2024-04/themes/${themeId}/assets.json?asset[key]=config/settings_data.json`;
-    const res = await fetch(url, {
-      headers: { "X-Shopify-Access-Token": session.accessToken },
-    });
-
-    if (!res.ok) {
-      return { isEnabled: false };
+    const content = theme.files?.nodes?.[0]?.body?.content;
+    if (!content) {
+      // Theme readable but no settings_data content — treat as "not enabled" (not a failure).
+      return { theme: { id: theme.id, name: theme.name }, isEnabled: false, checkFailed: false };
     }
 
-    const { asset } = await res.json();
-    const settingsData = JSON.parse(asset.value);
-    const blocks = settingsData?.current?.blocks;
-
-    if (!blocks) {
-      return { isEnabled: false };
-    }
-
-    for (const [, block] of Object.entries(blocks)) {
-      if (
-        block.type &&
-        block.type.includes(extensionHandle) &&
-        block.disabled !== true
-      ) {
-        return { isEnabled: true };
+    let isEnabled = false;
+    try {
+      const settings = JSON.parse(content);
+      const blocks = settings?.current?.blocks || {};
+      for (const block of Object.values(blocks)) {
+        if (block?.type && block.type.includes(appHandle) && block.disabled !== true) {
+          isEnabled = true;
+          break;
+        }
       }
+    } catch (e) {
+      console.error("Failed to parse settings_data.json:", e?.message || e);
+      return { theme: { id: theme.id, name: theme.name }, isEnabled: false, checkFailed: true };
     }
 
-    return { isEnabled: false };
+    return { theme: { id: theme.id, name: theme.name }, isEnabled, checkFailed: false };
   } catch (error) {
-    return { isEnabled: false };
+    console.error(
+      "Embed status check failed:",
+      error?.body ? JSON.stringify(error.body) : error?.message || error,
+    );
+    return { theme: null, isEnabled: false, checkFailed: true };
   }
 }
 
 /**
- * Get current theme info
+ * Get current theme info (name/id only).
  */
 export async function getCurrentTheme(admin) {
   try {
     const response = await admin.graphql(
       `#graphql
         query getMainTheme {
-          themes(first: 10, roles: [MAIN]) {
-            nodes {
-              id
-              name
-              role
-            }
+          themes(first: 1, roles: [MAIN]) {
+            nodes { id name role }
           }
         }
-      `
+      `,
     );
-
     const data = await response.json();
-    const mainTheme = data?.data?.themes?.nodes?.[0];
-
-    return mainTheme || null;
+    return data?.data?.themes?.nodes?.[0] || null;
   } catch (error) {
     return null;
   }

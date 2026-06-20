@@ -30,7 +30,7 @@ import {
   sanitizeSettings,
   parseFormData,
 } from "../utils/validation";
-import { getCurrentTheme, checkAppEmbedStatus } from "../utils/appBridge";
+import { getThemeAndEmbedStatus } from "../utils/appBridge";
 import { HeroBanner } from "../components/HeroBanner";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { SetupStepsBlock } from "../components/SetupStepsBlock";
@@ -49,6 +49,7 @@ export const loader = async ({ request }) => {
   let settings = null;
   let currentTheme = null;
   let isEmbedEnabled = false;
+  let embedCheckFailed = false;
   let error = null;
 
   try {
@@ -58,18 +59,12 @@ export const loader = async ({ request }) => {
     error = "Failed to load settings";
   }
 
-  try {
-    currentTheme = await getCurrentTheme(admin);
-    const embedResult = await checkAppEmbedStatus(session, admin, APP_HANDLE);
-    isEmbedEnabled = embedResult.isEnabled;
-  } catch (e) {
-    console.error(
-      "Theme/embed lookup failed:",
-      e?.body ? JSON.stringify(e.body) : e?.message || e,
-    );
-  }
+  const embed = await getThemeAndEmbedStatus(admin, APP_HANDLE);
+  currentTheme = embed.theme;
+  isEmbedEnabled = embed.isEnabled;
+  embedCheckFailed = embed.checkFailed;
 
-  return json({ shop, settings, currentTheme, isEmbedEnabled, error });
+  return json({ shop, settings, currentTheme, isEmbedEnabled, embedCheckFailed, error });
 };
 
 export const action = async ({ request }) => {
@@ -110,13 +105,13 @@ export const action = async ({ request }) => {
       }
 
       case "checkEmbed": {
-        const currentTheme = await getCurrentTheme(admin);
-        const embedCheck = await checkAppEmbedStatus(session, admin, APP_HANDLE);
+        const embed = await getThemeAndEmbedStatus(admin, APP_HANDLE);
 
         return json({
           success: true,
-          embedStatus: embedCheck.isEnabled,
-          currentTheme,
+          embedStatus: embed.isEnabled,
+          embedCheckFailed: embed.checkFailed,
+          currentTheme: embed.theme,
         });
       }
 
@@ -264,6 +259,7 @@ export default function Index() {
     settings,
     currentTheme,
     isEmbedEnabled,
+    embedCheckFailed,
     error: loaderError,
   } = loaderData;
 
@@ -290,6 +286,7 @@ export default function Index() {
               <SetupStepsBlock
                 shopDomain={shop}
                 isEmbedEnabled={isEmbedEnabled}
+                embedCheckFailed={embedCheckFailed}
                 currentTheme={currentTheme}
               />
               <SettingsPanel settings={settings} />

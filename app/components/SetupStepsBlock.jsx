@@ -34,18 +34,27 @@ function ExternalIcon() {
 export function SetupStepsBlock({
   shopDomain,
   isEmbedEnabled = false,
+  embedCheckFailed = false,
   currentTheme = null,
 }) {
   const fetcher = useFetcher();
   const [embedStatus, setEmbedStatus] = useState(isEmbedEnabled);
+  const [checkFailed, setCheckFailed] = useState(embedCheckFailed);
+  // After the merchant says they've enabled it, stop nagging even if we can't auto-detect.
+  const [acknowledged, setAcknowledged] = useState(false);
 
   useEffect(() => {
     setEmbedStatus(isEmbedEnabled);
   }, [isEmbedEnabled]);
 
   useEffect(() => {
+    setCheckFailed(embedCheckFailed);
+  }, [embedCheckFailed]);
+
+  useEffect(() => {
     if (fetcher.data?.embedStatus !== undefined) {
       setEmbedStatus(fetcher.data.embedStatus);
+      setCheckFailed(Boolean(fetcher.data.embedCheckFailed));
     }
   }, [fetcher.data]);
 
@@ -67,7 +76,7 @@ export function SetupStepsBlock({
   const steps = [
     { done: true, title: "App installed", body: "HideStock is connected to your store." },
     {
-      done: embedStatus,
+      done: embedStatus || acknowledged,
       title: "Enable the theme embed",
       body: "Activate HideStock in your theme so it can run on the storefront.",
     },
@@ -109,7 +118,37 @@ export function SetupStepsBlock({
             ))}
           </BlockStack>
 
-          {!embedStatus && (
+          {embedStatus ? (
+            <Banner tone="success" title="Storefront active">
+              <p>HideStock is live on your theme and will hide prices per your settings.</p>
+            </Banner>
+          ) : acknowledged ? (
+            <Banner tone="info" title="Marked as enabled">
+              <p>
+                You confirmed the embed is on. Test it on your storefront with an
+                out-of-stock product — the price should be hidden. If not, re-check the
+                embed in the theme editor.
+              </p>
+            </Banner>
+          ) : checkFailed ? (
+            <>
+              <Divider />
+              <Banner tone="info" title="Enable the theme embed">
+                <p>
+                  Shopify limits apps from reading your theme, so we can’t always
+                  auto-confirm this. Enable HideStock in the theme editor below — it works
+                  on your storefront as soon as it’s on.
+                </p>
+              </Banner>
+              <List type="number">
+                <List.Item>Click “Open theme editor” below.</List.Item>
+                <List.Item>
+                  Find <strong>HideStock</strong> in the App embeds section.
+                </List.Item>
+                <List.Item>Toggle it on and click Save.</List.Item>
+              </List>
+            </>
+          ) : (
             <>
               <Divider />
               <Banner tone="warning" title="Action required">
@@ -129,29 +168,40 @@ export function SetupStepsBlock({
             </>
           )}
 
-          {embedStatus && (
-            <Banner tone="success" title="Storefront active">
-              <p>HideStock is live on your theme and will hide prices per your settings.</p>
-            </Banner>
-          )}
-
           {currentTheme && (
             <Text variant="bodySm" tone="subdued">
               Current theme: <strong>{currentTheme.name}</strong>
             </Text>
           )}
 
-          <InlineStack gap="300">
-            <Button
-              icon={ExternalIcon}
-              onClick={() => window.open(themeEditorUrl(), "_blank")}
-            >
-              Open theme editor
-            </Button>
-            <Button onClick={handleCheckEmbed} loading={isChecking} variant="secondary">
-              Verify
-            </Button>
-          </InlineStack>
+          {!embedStatus && !acknowledged && (
+            <InlineStack gap="300">
+              <Button
+                icon={ExternalIcon}
+                onClick={() => window.open(themeEditorUrl(), "_blank")}
+              >
+                Open theme editor
+              </Button>
+              <Button onClick={handleCheckEmbed} loading={isChecking} variant="secondary">
+                Verify
+              </Button>
+              <Button onClick={() => setAcknowledged(true)} variant="tertiary">
+                I’ve enabled it
+              </Button>
+            </InlineStack>
+          )}
+
+          {(embedStatus || acknowledged) && (
+            <InlineStack gap="300">
+              <Button
+                icon={ExternalIcon}
+                onClick={() => window.open(themeEditorUrl(), "_blank")}
+                variant="tertiary"
+              >
+                Open theme editor
+              </Button>
+            </InlineStack>
+          )}
         </BlockStack>
       </Card>
     </>
